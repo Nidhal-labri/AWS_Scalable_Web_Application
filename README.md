@@ -6,7 +6,8 @@ This project demonstrates how i deployed a simple web application on AWS using E
 
 ## 🗺️ Architecture Diagram
 
-<img width="3113" height="2063" alt="Arcitecture" src="https://github.com/user-attachments/assets/a53b13bb-4ba9-4cef-8adc-20429eb1a3e3" />
+<img width="3113" height="2063" alt="Blank diagram (1)" src="https://github.com/user-attachments/assets/4a2e84f4-3728-43a3-ae99-71f4d454611f" />
+
 
 ---
 
