@@ -26,9 +26,7 @@ This project demonstrates how i deployed a simple web application on AWS using E
 
 ### ✅ Step 1 – Create VPC, Subnets, Route Table & Internet Gateway
 
-I created a VPC named `my-vpc-01` with the following IPv4 CIDR block:
-
-- `10.10.0.0/16`
+I created a VPC named `my-vpc-01` where the IPv4 CIDR is `10.10.0.0/16`.
 
 Then I created **three public subnets**:
 
@@ -38,29 +36,26 @@ Then I created **three public subnets**:
 
 Next, I created an **Internet Gateway** named `my-internet-gateway` and attached it to the VPC.
 
-To enable routing:
+Even though having an Internet Gateway now enables our resources to communicate with the Internet, we still need to define a route table and associate it with our subnets. I gave my route table of my VPC the name `my-route-table`. I verified the subnet association. Last but not least, I added a default route for `0.0.0.0/0` to my Internet Gateway.
 
-- Created a route table named `my-route-table`
-- Associated it with the public subnets
-- Added a default route `0.0.0.0/0` pointing to the Internet Gateway
 
 📷 **Resource Map**  
-*Image to be added here*
+<img width="1655" height="556" alt="image_2025-07-26_01-10-09" src="https://github.com/user-attachments/assets/aa3dae12-7467-473a-b72d-deea330d7dd0" />
 
 ---
 
 ### 🔐 Step 2 – Define Security Groups
 
-Created two security groups:
+Security is paramount, so I created two security groups:
 
-- `my-load-balancer-security-group`: Allowed **HTTP traffic from anywhere** (`0.0.0.0/0`)
-- `my-web-server-security-group`: Allowed **HTTP traffic only from the ALB**
+- `my-load-balancer-security-group`: Allowed HTTP traffic from the internet (`0.0.0.0/0`).  
+- `my-web-server-security-group`: Restricted HTTP traffic to only come from the ALB.
 
 ---
 
 ### 🧩 Step 3 – Create Launch Template
 
-Launch Template name: `my-launch-template`
+On this step, we will create a Launch Template named `my-launch-template` that will be used to define the EC2 instances we deploy in our Auto Scaling Group.
 
 Configuration used:
 
@@ -76,73 +71,50 @@ Configuration used:
 
 ### ⚖️ Step 4 – Create Application Load Balancer (ALB)
 
-Configured an **internet-facing** ALB named `my-load-balancer` that:
+I configured an Application Load Balancer (ALB) named `my-load-balancer` that serves as internet-facing to distribute traffic across the instances across different subnets and Availability Zones. I attached `my-load-balancer-security-group` as a security group to allow traffic from the internet.
 
-- Spans across the three public subnets in different Availability Zones
-- Uses the security group `my-load-balancer-security-group`
-
-The ALB is connected to a **Target Group** named `my-project` that registers EC2 instances automatically.
+The ALB was tied to a Target Group named `my-project` that I created to register the instances automatically.
 
 ---
 
 ### 📈 Step 5 – Create Auto Scaling Group (ASG)
 
-Created an ASG named `my-asg`:
+I've created an Auto Scaling Group named `my-asg` that used the previously created launch template and linked to my Load Balancer. I configured the desired capacity as 2 instances, with a minimum desired capacity of 2 and maximum of 5. The scaling policy is set to maintain average CPU utilization at 70%.
 
-- Based on the `my-launch-template`
-- Linked to the Load Balancer and Target Group
-- Desired capacity: **2**
-- Minimum: **2**, Maximum: **5**
-- Scaling policy: Maintain average CPU utilization at **70%**
+For monitoring, I enabled group metrics collection within CloudWatch.
 
-✅ Enabled **CloudWatch group metrics**  
-📧 Configured an **SNS Topic** (`my-sns-topic`) to notify `nidhal.labri@gmail.com` for events:
-- EC2 instance launch
-- EC2 termination
-- Launch failure
-- Termination failure
+I also enabled notifications for the events (launch, terminate, fail to launch, fail to terminate) by creating an SNS Topic `my-sns-topic` that sends an email to `nidhal.labri@gmail.com` if one of those events is triggered.
 
-📬 **Example Notification**  
-*Image to be added here*
+📬 Here is an example of the received mail when a new EC2 instance was launched:  
+<img width="1518" height="677" alt="55" src="https://github.com/user-attachments/assets/de44a8ab-fb39-4e3f-9c78-3c50b83d0c3c" />
 
 ---
 
 ### 🔍 Step 6 – Test Functionality
 
-Access the application via the ALB DNS name:  
+Finally! We can now access our web application through the ALB DNS name:  
 **`my-load-balancer-2072421467.us-east-1.elb.amazonaws.com`**
 
-📷 *Screenshot showing instance IDs / AZs in browser*  
-*Image to be added here*
+<img width="1919" height="1003" alt="31" src="https://github.com/user-attachments/assets/cdf24ce6-98cd-480a-84b1-46b3fd902bab" />
 
-Confirmed successful traffic distribution across instances — each tab loads a different EC2 instance (with unique Instance ID and AZ), confirming the ALB is working properly.
+
+✅ We can see that the web application displays that the traffic is being distributed between the 2 desired instances via the Load Balancer. Each tab shows a different EC2 instance (different Instance IDs and Availability Zones), confirming that the Load Balancer is correctly balancing the traffic across multiple instances in the Auto Scaling Group.
 
 ---
 
 ## ⚠️ Problem Faced: 502 Bad Gateway
 
-I encountered a **502 Bad Gateway** error when accessing the application via the ALB. The Target Group showed the EC2 instances as **unhealthy**.
+I faced a **502 Bad Gateway** error when I was trying to access my web application through the ALB. I saw in the Target Group that it showed the existing two EC2 instances as unhealthy.
 
-Upon SSH access and debugging, I found that the **user data script did not finish setting up NGINX** before the health checks began.
-
-### 🔧 Solution:
-
-- Fixed the user data script to correctly install NGINX and serve a valid HTML page
-- Updated the launch template with the fixed script
-- Recreated the Auto Scaling Group using the updated launch template version
-
-✅ Everything worked perfectly after that — the ALB routed traffic without any manual intervention.
+After some debugging to one of those EC2 instances via SSH, I realized the issue was with the user data script — it didn’t fully set up the web server before the ALB health checks kicked in. I updated the script to correctly install NGINX and generate a proper HTML page, and it worked for that machine.
+So I updated the user data in the Launch Template with the new script and recreated the Auto Scaling Group with the new Launch Template version and everything worked perfectly ✅ — the ALB routed traffic correctly, and no manual intervention was needed anymore.
 
 ---
 
-## 💡 Future Improvements (RDS Plan)
+## 💡 Note
 
-I originally planned to deploy a **Flask application connected to an RDS PostgreSQL Multi-AZ DB cluster**, including:
+I originally planned to deploy a Flask application connected to an RDS PostgreSQL Multi-AZ DB cluster (a primary DB instance with two readable standbys in separate Availability Zones), but unfortunately, the Multi-AZ RDS is not Free Tier eligible, so I have excluded it for now.
 
-- 1 primary DB instance
-- 2 readable standbys in separate AZs
-
-However, **Multi-AZ RDS is not free tier eligible**, so I excluded it for now.
 
 ---
 
