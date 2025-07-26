@@ -22,7 +22,6 @@ This project demonstrates how i deployed a simple web application on AWS using E
 
 ## 🛠️ Deployment Steps
 
----
 
 ### ✅ Step 1 – Create VPC, Subnets, Route Table & Internet Gateway
 
