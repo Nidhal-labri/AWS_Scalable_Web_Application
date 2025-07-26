@@ -23,6 +23,7 @@ This project demonstrates how i deployed a simple web application on AWS using E
 ## 🛠️ Deployment Steps
 
 
+
 ### ✅ Step 1 – Create VPC, Subnets, Route Table & Internet Gateway
 
 I created a VPC named `my-vpc-01` where the IPv4 CIDR is `10.10.0.0/16`.
@@ -41,7 +42,7 @@ Even though having an Internet Gateway now enables our resources to communicate 
 📷 **Resource Map**  
 <img width="1655" height="556" alt="image_2025-07-26_01-10-09" src="https://github.com/user-attachments/assets/aa3dae12-7467-473a-b72d-deea330d7dd0" />
 
----
+
 
 ### 🔐 Step 2 – Define Security Groups
 
@@ -50,7 +51,7 @@ Security is paramount, so I created two security groups:
 - `my-load-balancer-security-group`: Allowed HTTP traffic from the internet (`0.0.0.0/0`).  
 - `my-web-server-security-group`: Restricted HTTP traffic to only come from the ALB.
 
----
+
 
 ### 🧩 Step 3 – Create Launch Template
 
@@ -66,7 +67,7 @@ Configuration used:
 - **Hostname type**: IP name  
 - **User Data**: Bash script to install and configure the web server on boot  
 
----
+
 
 ### ⚖️ Step 4 – Create Application Load Balancer (ALB)
 
@@ -74,7 +75,7 @@ I configured an Application Load Balancer (ALB) named `my-load-balancer` that se
 
 The ALB was tied to a Target Group named `my-project` that I created to register the instances automatically.
 
----
+
 
 ### 📈 Step 5 – Create Auto Scaling Group (ASG)
 
@@ -87,7 +88,7 @@ I also enabled notifications for the events (launch, terminate, fail to launch, 
 📬 Here is an example of the received mail when a new EC2 instance was launched:  
 <img width="1518" height="677" alt="55" src="https://github.com/user-attachments/assets/de44a8ab-fb39-4e3f-9c78-3c50b83d0c3c" />
 
----
+
 
 ### 🔍 Step 6 – Test Functionality
 
